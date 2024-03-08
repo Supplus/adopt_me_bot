@@ -2,8 +2,7 @@ import discord
 import discord.ui
 from discord.ui import InputText, Modal
 import asyncio
-from discord import NotFound, InvalidArgument, HTTPException
-from discord.utils import get
+from discord import NotFound
 from discord.ext.commands.errors import CommandNotFound
 import pytz
 from datetime import datetime, timedelta
@@ -20,10 +19,8 @@ from discord.ext import pages
 import ast
 from PIL import Image, ImageFont, ImageDraw
 from itertools import islice
-import arrow, traceback, threading, bs4
+import arrow, traceback, bs4
 from aioconsole import aexec
-from bit import Key, PrivateKey, PrivateKeyTestnet
-from bit.network import currency_to_satoshi, satoshi_to_currency
 from chat_exporter import chat_exporter
 import warnings
 from urllib3.exceptions import InsecureRequestWarning
@@ -321,43 +318,6 @@ def updateVC(name):
   global sessionDiscord
   json_data = {'name': name}
   sessionDiscord.patch(f'https://discord.com/api/v9/channels/{TRADETAB_STATUS_ID}', json=json_data)
-
-subsToAdd = []
-subsToChange = []
-isWorking_subs = False
-@tasks.loop(seconds=2)
-async def addsubs():
-  global isWorking_subs
-  if isWorking_subs == True:
-    return
-
-  if len(subsToAdd) != 0:
-    if isWorking_subs == True:
-      return
-    isWorking_subs = True
-    msglist = await readSubs()
-    msglist.extend(subsToAdd)
-    for item in subsToAdd[:]:
-      subsToAdd.remove(item)
-    editSubs(msglist)
-    isWorking_subs = False
-
-  if len(subsToChange) != 0:
-    if isWorking_subs == True:
-      return
-    isWorking_subs = True
-    msglist = await readSubs()
-    newInfo = []
-    for item1 in subsToChange[:]:
-      for passi in msglist[:]:
-        if item1['userID'] == passi['userID']:
-          msglist.remove(passi)
-          newInfo.append({'userID': item1['userID'], 'boughtAt': item1['boughtAt'], 'endsAt': item1['endsAt'], 'extended': item1['extended']})
-          break
-      subsToChange.remove(item1)
-    msglist.extend(newInfo)
-    editSubs(msglist)
-    isWorking_subs = False
 
 @tasks.loop(hours=1)
 async def checkvouch():
@@ -1206,11 +1166,6 @@ async def checkIfAccepted():
       
     AreThoseYourItems_List.append( {'msg_id': masa.id, 'tr_id': tradeID} )
 
-@bot.command()
-async def editpaste(ctx, msgid):
-  if ctx.author.id in TicketAccess:
-    msg = await ctx.channel.fetch_message(int(msgid))
-    await msg.edit(view=PasteAddress())
 
 class isTheTradeSuccessful(discord.ui.View):
   def __init__(self):
@@ -1364,79 +1319,6 @@ async def subsChecker():
     except Exception:
       pass
 
-rainbow_colors_hex = [0xFF0000, # Red
-                      0xFFA500, # Orange
-                      0xFFFF00, # Yellow
-                      0x008000, # Green
-                      0x0000FF, # Blue
-                      0x4B0082, # Indigo
-                      0xEE82EE, # Violet
-                      0xFFC0CB, # Pink
-                      0xFF6347, # Tomato
-                      0xFF4500, # Orange Red
-                      0xFF8C00, # Dark Orange
-                      0xFFD700, # Gold
-                      0xFFFFE0, # Light Yellow
-                      0x9ACD32, # Yellow Green
-                      0x00FF7F, # Spring Green
-                      0x00FA9A, # Medium Spring Green
-                      0x00FFFF, # Cyan / Aqua
-                      0x1E90FF, # Dodger Blue
-                      0x8A2BE2, # Blue Violet
-                      0x9400D3, # Dark Violet
-                      0xBA55D3, # Medium Orchid
-                      0xC71585, # Medium Violet Red
-                      0xDB7093, # Pale Violet Red
-                      0xFF69B4, # Hot Pink
-                      0xFF1493, # Deep Pink
-                      0xFF00FF, # Fuchsia / Magenta
-                      0xFF00FF, # Purple (same as Fuchsia / Magenta)
-                      0x6A5ACD, # Slate Blue
-                      0x7B68EE, # Medium Slate Blue
-                      0x9370DB, # Medium Purple
-                      0x8B008B, # Dark Magenta
-                      0x9400D3, # Dark Violet
-                      0x9932CC, # Dark Orchid
-                      0x8FBC8F, # Dark Sea Green
-                      0x20B2AA, # Light Sea Green
-                      0x00CED1, # Dark Turquoise
-                      0x40E0D0, # Turquoise
-                      0x48D1CC, # Medium Turquoise
-                      0x008080, # Teal
-                      0x2E8B57, # Sea Green
-                      0x3CB371, # Medium Sea Green
-                      0x66CDAA, # Medium Aquamarine
-                      0x7FFFD4, # Aquamarine
-                      0xB0E0E6, # Powder Blue
-                      0xADD8E6, # Light Blue
-                      0x87CEEB, # Sky Blue
-                      0x87CEFA, # Light Sky Blue
-                      0x00BFFF, # Deep Sky Blue
-                      0x1E90FF, # Dodger Blue (same as earlier)
-                      0x6495ED, # Cornflower Blue
-                      0x7B68EE, # Medium Slate Blue (same as earlier)
-                      0x4169E1, # Royal Blue
-                      0x0000CD, # Medium Blue
-                      0x00008B  # Dark Blue
-                     ]
-
-def mm_req_embed():
-  async def func1():
-    c1 = bot.get_channel(REQUEST_CHANNEL_ID)
-    while True:
-      try:
-        for color in rainbow_colors_hex:
-          msg1 = await c1.fetch_message(1081955630971101184)
-          embed = msg1.embeds[0]
-          embed.color = color
-          await msg1.edit(embed=embed)
-          await asyncio.sleep(5)
-      except Exception:
-        pass
-      await asyncio.sleep(5)
-  loop = bot.loop
-  fut = asyncio.run_coroutine_threadsafe(func1(), loop)
-  return fut.result()
 
 @tasks.loop(seconds=30)
 async def time_status():
@@ -1451,8 +1333,6 @@ async def on_ready():
     global guild1, guild2, impLogs
     
     guild1 = bot.get_guild(GUILD_ID)
-    #guild2 = bot.get_guild(1081263064776716299)
-    #impLogs = bot.get_channel(929644119691780156)
   
     bot.add_view(AMP_Tickets())
     bot.add_view(SellerOrBuyer())
@@ -1465,25 +1345,14 @@ async def on_ready():
     bot.add_view(WriteUserView())
     bot.add_view(TradeInfo())
     bot.add_view(PasteGamepass())
-    bot.add_view(PasteAddress())
     bot.add_view(CancelTrade())
-    #bot.add_view(CancelConfirmation())
     bot.add_view(OpenCancelTrade())
-
-    #if not addsubs.is_running():
-    #  addsubs.start()
 
     if not checkIfAccepted.is_running():
       checkIfAccepted.start()
 
-    #if not inactive_tickets.is_running():
-    #  inactive_tickets.start()
-
     if not checkTradesSucc.is_running():
       checkTradesSucc.start()
-
-    #if not checkvouch.is_running():
-    #  checkvouch.start()
 
     if not subsChecker.is_running():
       subsChecker.start()
@@ -1491,9 +1360,6 @@ async def on_ready():
     if not time_status.is_running():
       time_status.start()
 
-    #threading.Thread(target=mm_req_embed).start()
-
-    #await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=f"Online"), status=discord.Status.online)
     print(f"Connected To Discord User: {bot.user.name}#{bot.user.discriminator}")
 
 
@@ -1522,9 +1388,7 @@ class Off_AMP_Tickets(discord.ui.View):
   @discord.ui.button(row=0, label='Create Ticket', style=discord.ButtonStyle.red, custom_id="amp_tickettt", disabled=True)
   async def button_callback1(self, button, interaction):        
     return
-  #@discord.ui.button(row=0, label='Subscribe', style=discord.ButtonStyle.red, custom_id="amp_subsssc", disabled=True)
-  #async def button_callback2(self, button, interaction):        
-  #  return
+
   @discord.ui.button(row=0, label='FAQ', style=discord.ButtonStyle.red, custom_id="faqqqe", disabled=True)
   async def button_callback5(self, button, interaction):        
     return
@@ -1686,102 +1550,6 @@ class AMP_Tickets(discord.ui.View):
         embed2 = discord.Embed(title="<:role:1101255852482117762>・Select your role", description=">>> Select:\n\"__**Seller**__\" if you are __giving__ items to the bot.\n\"__**Buyer**__\" if you are __not giving__ items to the bot", color=MAINCOLOR)
         embed2.set_footer(text="Selected: ")
         await channel.send(embed=embed2, view=SellerOrBuyer())
-
-  #@discord.ui.button(row=0, label='Subscription Benefits', style=discord.ButtonStyle.red, custom_id="subBenifi", disabled=False)
-  #async def button_callback4(self, button, interaction):        
-
-  #  emb1 = discord.Embed(title="> __Subscription Benefits__", description=f"・**Free usage for 30 days of our automated services.**\n\n・**<@&{SUBSCRIBER_ROLE}> Role**", color=0xa340ff)
-
-  #  try:
-  #    await interaction.response.send_message(embed=emb1, ephemeral=True)
-  #  except NotFound:
-  #    return
-  
-  #@discord.ui.button(row=0, label='Subscribe', style=discord.ButtonStyle.red, custom_id="amp_subscribe", disabled=False)
-  #async def button_callback3(self, button, interaction):        
-  #  global users_oncooldown
-
-  #  try:
-  #    await interaction.response.send_message(content=f"**Prepearing..**", ephemeral=True)
-  #  except NotFound:
-  #    return
-
-  #  if interaction.user.id in users_oncooldown:
-  #    return
-  #  else:
-  #    users_oncooldown.append(interaction.user.id)
-
-  #    con,cur = openCON()
-  #    cur.execute(f"SELECT * FROM sub_tickets WHERE (channel_owner_id='{interaction.user.id}') AND (ticket_status='Active')")
-  #    resSQL = cur.fetchall()
-  #    has_ticket = len(resSQL)!=0
-  #    
-  #    if has_ticket == True:
-  #      closeCON(cur,con)
-  #      try:
-  #        users_oncooldown.remove(interaction.user.id)
-  #      except ValueError:
-  #        pass
-  #      await interaction.edit_original_response(content=f"**You Already Have a Ticket Created!** -> <#{resSQL[0]['channel_id']}>")
-  #      return
-
-  #    subsList = await readSubs()
-  #    for subi in subsList:
-  #      if subi['userID'] == interaction.user.id:
-  #        closeCON(cur,con)
-  #        await interaction.edit_original_response(content=f"**You Have Aready Subscribed!**")
-  #        return
-
-  #    if has_ticket == False:    
-  #      await interaction.edit_original_response(content=f"**Creating ticket..**")
-  #      
-  #      guild = interaction.guild
-  #      ticketlogs = bot.get_channel(MMPASS_LOGS_ID)
-  #      ###
-  #      tickets_category = bot.get_channel(MMPASS_CATEGORY_ID)
-  #      ###
-  #      tnrole = interaction.guild.get_role(TICKET_RENAMER_ROLE)
-  #      overwrites = {
-  #        guild.default_role: discord.PermissionOverwrite(view_channel=False),
-  #        interaction.user: discord.PermissionOverwrite(send_messages=True, view_channel=True, attach_files=True, embed_links=True, read_message_history=True, use_slash_commands=True),
-  #        tnrole: discord.PermissionOverwrite(view_channel=True, manage_channels=True)
-  #      }
-  #      
-  #      channel = await guild.create_text_channel(f"sub-{interaction.user.id}", category=tickets_category, overwrites=overwrites)
-  #      await interaction.edit_original_response(content=f"**Ticket Created!** -> {channel.mention}")
-
-  #      embed = discord.Embed(title="<a:wave:1101249815892996228>・Jace's Middleman Service", description=f"━━━━━━━━━━━━━━━━━━\nHello {interaction.user.mention}! Welcome to our automated middleman service.",color=MAINCOLOR)
-  #      embed.set_footer(icon_url=f'{interaction.user.display_avatar.url}', text=f'{interaction.user} | {interaction.user.id}')
-  #      await channel.send(f"{interaction.user.mention}", embed=embed, view=Delete_Button_Before())
-
-  #      key = PrivateKey()
-  #      wif = key.to_wif()
-  #      usdprice = float(sessionCheck.get('https://blockchain.info/ticker').json()['USD']['last'])
-  #      usd_sat = int(currency_to_satoshi(5, "usd"))
-  #      btc_amount = float(satoshi_to_currency(usd_sat, "btc"))
-  #      embinfo = discord.Embed(title="", description=f"> **Before you subscribe to our automated middleman service, there are things that you should know and terms to follow.**\n\n**・__ToS__**\n> Once you subscribe, there is no going back, therefore we will not refund you what you have paid under any circumstances.\n・\n> There may be times when we turn off the bot for like a day, which the reason could be for maintenance or implementing new features or because Roblox is down. During these times, your subscription will be extended according to the period of time the bot was offline. So if the bot was offline for a day, your subscription will be extended by one day.\n・\n> You have to keep in your mind, that this service will not last forever. Although we would inform you a month beforehand in case we wanted to discontinue the service.\n・\n> The server rules apply here as well, so if you break any rules and get banned for it then it's your problem. Subscribing to our automated service will not give you immunity against getting banned.\n\n**・__Benefits__**\n> - Free usage for 30 days of our automated services.\n> - <@&{SUBSCRIBER_ROLE}> Role.\n> More features are coming soon if you guys continue to support us :D", color=MAINCOLOR)
-  #      embed2 = discord.Embed(title="Payment Information",description=f"Please consider reading the information sent above before paying, if you changed your mind then you may close the ticket with the button that was sent at the very top.\nClick the **Paid** button once you have sent the funds to the payment address.", color=MAINCOLOR)
-  #      embed2.add_field(name="USD Amount", value=f"$5.00", inline=True)
-  #      embed2.add_field(name="Crypto Amount (BTC)", value=f"{btc_amount}", inline=True)
-  #      embed2.add_field(name="Payment Address", value=f"```{key.address}```", inline=False)
-  #      embed2.set_footer(text=f"Current BTC Price = ${usdprice}")
-  #      await channel.send(interaction.user.mention, embeds=[embinfo,embed2], view=PasteAddress())
-
-  #      cryptoLogs = bot.get_channel(CRYPTO_LOGS)
-  #      msgeea = await cryptoLogs.send(embed=discord.Embed(title="⚪ Payment Started ⚪", description=f"Type: Subscription\nChannel: {channel.mention} {channel.id}\nUser: {interaction.user.mention}\nWIF: {wif}\nAddress: {key.address}\nUSD: $5.00\nBTC: {btc_amount}", color=0xf8f8f8))
-
-  #      cur.execute(f"INSERT INTO sub_tickets (channel_id, channel_owner_id, crypto_address, crypto_wif, btc_amount, usd_price, message_id) VALUES ({channel.id}, {interaction.user.id}, '{key.address}', '{wif}', {btc_amount}, {usdprice}, {msgeea.id})")
-  #      con.commit()
-  #      closeCON(cur,con)
-  #      
-  #      try:
-  #        users_oncooldown.remove(interaction.user.id)
-  #      except ValueError:
-  #        pass
-  #      
-  #      logembed = discord.Embed(description=f"Author: **{interaction.user.name}#{interaction.user.discriminator}** | ID: {interaction.user.id}\nTicket: **{channel.name}** | ID: {channel.id}\nAction: **Created Ticket**", color=0x57f287)
-  #      logembed.set_author(name=f"{interaction.user.name}#{interaction.user.discriminator}", icon_url=f"{interaction.user.display_avatar.url}")
-  #      await ticketlogs.send(embed=logembed)
 
   @discord.ui.button(row=0, label='FAQ', style=discord.ButtonStyle.gray, custom_id="faqqq", disabled=False)
   async def button_callback5(self, button, interaction):        
@@ -2958,18 +2726,6 @@ async def inventory(ctx):
     data = await getInventory()
     await ctx.reply(embed=discord.Embed(description="**Use the select menu in order to display certain information in the inventory**", color=MAINCOLOR), view=Inventory(invdata=data))
 
-#@bot.command()
-#@commands.cooldown(1, 15, commands.BucketType.user)
-#async def passes(ctx):
-#  pass_count = 0
-#  passesList = await readPasses()
-#  for passi in passesList:
-#    if passi['userID'] == ctx.author.id:
-#      pass_count = passi['passes']
-#      break
-#  embed = discord.Embed(title=f"You have `{pass_count}` mm-passes.", color=MAINCOLOR)
-#  await ctx.reply(embed=embed)
-
 @bot.command()
 async def addsub(ctx, user:discord.Member=None):
   if ctx.author.id not in TicketAccess:
@@ -3475,85 +3231,6 @@ async def close(ctx):
       embed.add_field(name="Agreed", value="`None`", inline=False)
       await ctx.send(embed=embed, view=DeleteTicketConfirm())
 
-@bot.command()
-async def editsubview(ctx, msgid):
-  if ctx.author.id != 358594990982561792:
-    return
-  msg = await ctx.channel.fetch_message(int(msgid))
-  await msg.edit(view=PasteAddress())
-
-class PasteAddress(discord.ui.View):
-  def __init__(self):
-    super().__init__(timeout=None)
-  @discord.ui.button(row=0, label="Paid", style=discord.ButtonStyle.green, custom_id="paidcash", disabled=False)
-  async def button_callback2(self, button, interaction):
-
-    if (interaction.user.id not in TicketAccess) and (interaction.user.id != interaction.message.mentions[0].id):
-      return await interaction.response.defer()
-        
-    subuser_id = interaction.message.mentions[0].id
-    subuser = interaction.guild.get_member(subuser_id)
-
-    con,cur = openCON()
-    cur.execute(f"SELECT * FROM sub_tickets WHERE channel_id='{interaction.channel.id}'")
-    resSQL = cur.fetchall()[0]
-
-    for child in self.children:
-      child.disabled = True
-    await interaction.message.edit(view=self)
-
-    await interaction.response.defer()
-
-    key = PrivateKey(resSQL['crypto_wif'])
-    req_amount = resSQL['btc_amount']
-    req_btc = shorten_btc(req_amount-0.000015)
-    btc_bal = float(key.get_balance(currency='btc'))
-    if btc_bal >= req_btc:
-      cur.execute(f"UPDATE sub_tickets SET has_paid='Yes' WHERE channel_id='{interaction.channel.id}'")
-      con.commit()
-      closeCON(cur,con)
-      
-      boughtAt_ts = datetime.now()
-      endsAt_ts = boughtAt_ts+timedelta(days=30)
-
-      boughtAt_ts = int(boughtAt_ts.timestamp())
-      endsAt_ts = int(endsAt_ts.timestamp())
-
-      embeda = discord.Embed(title="🟢 Payment Received 🟢", description=f">>> Thank you for using our services!\nYour subscription will end on <t:{endsAt_ts}:f>\nYou can view your subscrition information by typing the command `$sub`, such info as expiration date, purchased date and additional extension period.", color=SUCCCOLOR)
-      await interaction.channel.send(embed=embeda)
-
-      subrole = interaction.guild.get_role(SUBSCRIBER_ROLE)
-      await subuser.add_roles(subrole)
-
-      dataToSend = {'userID': subuser.id, 'boughtAt': boughtAt_ts, 'endsAt': endsAt_ts, 'extended': 0}
-      subsToAdd.append(dataToSend)
-
-      embed = discord.Embed(title="🟢 Paid 🟢", color=SUCCCOLOR)
-      c = bot.get_channel(CRYPTO_LOGS)
-      msgreply = await c.fetch_message(resSQL['message_id'])
-      await msgreply.reply(embed=embed)
-
-    elif btc_bal == 0:
-      closeCON(cur,con)
-      await interaction.message.edit(view=PasteAddress())
-      return await interaction.channel.send(f"{interaction.user.mention} No transactions were detected.", delete_after=5)
-    else:
-      closeCON(cur,con)
-      await interaction.message.edit(view=PasteAddress())
-      usd_am = key.get_balance(currency='usd')
-      rem_btc = req_amount-btc_bal
-      await interaction.channel.send(f"The bot received only `{btc_bal}` BTC (`${usd_am}`). Please send `{rem_btc}` BTC more!", delete_after=10)
-      return
-
-  @discord.ui.button(row=0, label="Paste Address", style=discord.ButtonStyle.blurple, custom_id="pasteaddress", disabled=False)
-  async def button_callback1(self, button, interaction):
-
-    if interaction.user.id != interaction.message.mentions[0].id:
-      return await interaction.response.defer()
-
-    address = interaction.message.embeds[1].fields[2].value.replace(f"```", "")
-    await interaction.response.send_message(content=address, ephemeral=True)
-
 class PasteGamepass(discord.ui.View):
   def __init__(self):
     super().__init__(timeout=None)
@@ -3737,10 +3414,6 @@ async def confirm(ctx):
             return
           
           elif FEE_MODE == True:
-            #hasSub = False
-            #userWithSub = ""
-            #subsList = await readSubs()
-            #users_inticket = [resSQL['trader_seller_id'], resSQL['trader_receiver_id']]
             subrole = interaction.guild.get_role(SUBSCRIBER_ROLE)
             tradersliste = [interaction.guild.get_member(resSQL['trader_seller_id']), interaction.guild.get_member(resSQL['trader_receiver_id'])]
             isSubto = False
@@ -3749,11 +3422,6 @@ async def confirm(ctx):
                 isSubto = True
                 userWithSub = tr.id
                 break
-            #for subi in subsList:
-            #  if subi['userID'] in users_inticket:
-            #    hasSub = True
-            #    userWithSub = subi['userID']
-            #    break
 
             if isSubto == True:
               cur.execute(f"UPDATE channels SET has_paid_fee='Yes' WHERE channel_id='{interaction.channel.id}'")
@@ -4000,7 +3668,6 @@ async def transcript(ctx):
 @commands.cooldown(1, 10, commands.BucketType.channel)
 async def delete(ctx):
   users={}
-  #rolereq = ctx.guild.get_role(MM_ROLE_ID)
   loading_embed = discord.Embed(color = 0x99AAB5)
   loading_embed.set_author(name="Loading Chat, Users, Messages and Time!", icon_url="https://cdn.discordapp.com/emojis/806591946730504212.gif?v=1 ")
   if (ctx.author.id in TicketAccess):
@@ -4496,22 +4163,5 @@ async def extendsubs(ctx, timestamp=None):
     emb = discord.Embed(title="> __Subscribers Notification__", description=f"・**Your subscription has been extended by +{elaps} due to service maintenance.**", color=0x6704e8)
     emb.set_footer(text="You can view your subscription info by using the command $sub")
     await updates_channel.send(content=f"<@&{SUBSCRIBER_ROLE}>", embed=emb)
-
-    #subsData = await readSubs()
-    #for i in subsData:
-    #  i['extended'] = i['extended']+int(timestamp)
-    #editSubs(subsData)
-    #elaps = timedelta(seconds=int(timestamp))
-    #emb = discord.Embed(title="> __Subscribers Notification__", description=f"・**Your subscription has been extended by +{elaps} due to service maintenance.**", color=0x6704e8)
-    #emb.set_footer(text="You can view your subscription info by using the command $sub")
-    #subrole = ctx.guild.get_role(SUBSCRIBER_ROLE)
-    #if dmMember == "yes":
-    #  for user in subrole.members:
-    #    try:
-    #      dmchannel = await user.create_dm()
-    #      await dmchannel.send(embed=emb)
-    #    except Exception:
-    #      pass
-    #await ctx.reply(f"Subs extended by +{elaps}")
 
 bot.run(TOKEN, reconnect=True)
